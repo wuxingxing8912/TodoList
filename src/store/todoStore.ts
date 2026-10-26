@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Todo, TodoDraft } from '@/types/todo'
 import { createId } from '@/utils/id'
+import { STORAGE_KEYS } from '@/utils/storage'
 
 interface TodoState {
   /** 全部任务 */
@@ -57,7 +58,7 @@ export const useTodoStore = create<TodoState>()(
       clearCompleted: () => set((state) => ({ todos: state.todos.filter((todo) => !todo.completed) })),
     }),
     {
-      name: 'todo-app-storage', // LocalStorage key
+      name: STORAGE_KEYS.todos,
       version: 1,
       partialize: (state) => ({ todos: state.todos }),
     },
