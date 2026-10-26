@@ -10,6 +10,9 @@ export type TodoStatusFilter = 'all' | 'active' | 'completed'
 /** 分类筛选值：全部或某个具体分类 */
 export type CategoryFilter = Category | 'all'
 
+/** 列表数据范围：今日任务 / 全部任务 */
+export type TodoScope = 'today' | 'all'
+
 /** 待办事项数据模型 */
 export interface Todo {
   /** 唯一标识 */

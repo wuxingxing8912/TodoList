@@ -1,86 +1,45 @@
-import { useMemo, useState } from 'react'
-import { format, isSameDay, parseISO, startOfToday } from 'date-fns'
-import { useTodoStore } from '@/store/todoStore'
-import { PRIORITY_WEIGHT } from '@/constants/todo'
-import type { CategoryFilter, Todo, TodoStats, TodoStatusFilter } from '@/types/todo'
+import { useMemo } from 'react'
+import { format } from 'date-fns'
+import {
+  filterVisibleTodos,
+  selectCategoryStats,
+  selectStats,
+  selectTodayTodos,
+  useTodoStore,
+} from '@/store/todoStore'
 
 /**
- * 任务列表的搜索、筛选与统计
- * 未完成任务排前，其次按优先级，再按创建时间倒序
+ * 基于全局 store 的任务筛选与统计
+ * 用一个个独立订阅读取原始值，再用 useMemo 做派生计算，避免产生新引用导致的重复渲染
  */
 export function useTodoFilters() {
   const todos = useTodoStore((state) => state.todos)
-  const [keyword, setKeyword] = useState('')
-  const [status, setStatus] = useState<TodoStatusFilter>('all')
-  const [category, setCategory] = useState<CategoryFilter>('all')
+  const keyword = useTodoStore((state) => state.keyword)
+  const status = useTodoStore((state) => state.status)
+  const category = useTodoStore((state) => state.category)
+  const scope = useTodoStore((state) => state.scope)
 
-  const visibleTodos = useMemo(() => {
-    const query = keyword.trim().toLowerCase()
-
-    return todos
-      .filter((todo) => {
-        if (status === 'active' && todo.completed) return false
-        if (status === 'completed' && !todo.completed) return false
-        if (category !== 'all' && todo.category !== category) return false
-        if (!query) return true
-        return (
-          todo.title.toLowerCase().includes(query) ||
-          todo.description.toLowerCase().includes(query)
-        )
-      })
-      .sort((a, b) => {
-        if (a.completed !== b.completed) return a.completed ? 1 : -1
-        if (a.priority !== b.priority) return PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority]
-        return b.createdAt.localeCompare(a.createdAt)
-      })
-  }, [todos, keyword, status, category])
-
-  const stats = useMemo<TodoStats>(
-    () => ({
-      total: todos.length,
-      completed: todos.filter((todo) => todo.completed).length,
-      active: todos.filter((todo) => !todo.completed).length,
-    }),
-    [todos],
+  /** 当前数据范围内的任务 */
+  const visibleTodos = useMemo(
+    () => filterVisibleTodos({ todos, keyword, status, category }),
+    [todos, keyword, status, category],
   )
 
-  /** 按分类统计任务数量 */
-  const categoryStats = useMemo(() => {
-    const result: Record<string, { total: number; completed: number }> = {
-      work: { total: 0, completed: 0 },
-      study: { total: 0, completed: 0 },
-      life: { total: 0, completed: 0 },
-    }
-    todos.forEach((todo: Todo) => {
-      result[todo.category].total += 1
-      if (todo.completed) result[todo.category].completed += 1
-    })
-    return result
-  }, [todos])
-
-  /**
-   * 今日任务：截止日期为今天的任务；
-   * 没有截止日期时则以创建日期为今天为准
-   */
-  const todayTodos = useMemo(() => {
-    const today = startOfToday()
-    return visibleTodos.filter((todo) => {
-      const target = todo.dueDate ? parseISO(todo.dueDate) : parseISO(todo.createdAt)
-      return isSameDay(target, today)
-    })
-  }, [visibleTodos])
+  const todayTodos = useMemo(() => selectTodayTodos(visibleTodos), [visibleTodos])
+  const stats = useMemo(() => selectStats(todos), [todos])
+  const categoryStats = useMemo(() => selectCategoryStats(todos), [todos])
+  const todayLabel = useMemo(() => format(new Date(), 'M月d日'), [])
 
   return {
+    todos,
     keyword,
-    setKeyword,
     status,
-    setStatus,
     category,
-    setCategory,
+    scope,
     visibleTodos,
     todayTodos,
-    todayLabel: format(new Date(), 'M月d日'),
     stats,
     categoryStats,
+    todayLabel,
   }
 }

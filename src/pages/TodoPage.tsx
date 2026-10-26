@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { TodoForm } from '@/components/todo/TodoForm'
 import { TodoList } from '@/components/todo/TodoList'
 import { TodoStats } from '@/components/todo/TodoStats'
@@ -7,9 +6,13 @@ import { CategoryFilter } from '@/components/todo/CategoryFilter'
 import { BentoCard } from '@/components/ui/BentoCard'
 import { useTodoFilters } from '@/hooks/useTodoFilters'
 import { useTodoStore } from '@/store/todoStore'
+import type { TodoScope } from '@/types/todo'
 
-/** 右下角任务区的数据范围 */
-type ListScope = 'today' | 'all'
+/** 右下角任务区的数据范围切换项 */
+const SCOPE_OPTIONS: { value: TodoScope; label: string }[] = [
+  { value: 'today', label: '今日' },
+  { value: 'all', label: '全部' },
+]
 
 /** 待办主页：Bento Grid 布局（统计 / 添加 / 分类 / 任务列表） */
 export default function TodoPage() {
@@ -17,14 +20,16 @@ export default function TodoPage() {
   const toggleTodo = useTodoStore((state) => state.toggleTodo)
   const removeTodo = useTodoStore((state) => state.removeTodo)
   const clearCompleted = useTodoStore((state) => state.clearCompleted)
+  const setKeyword = useTodoStore((state) => state.setKeyword)
+  const setStatus = useTodoStore((state) => state.setStatus)
+  const setCategory = useTodoStore((state) => state.setCategory)
+  const setScope = useTodoStore((state) => state.setScope)
 
   const {
     keyword,
-    setKeyword,
     status,
-    setStatus,
     category,
-    setCategory,
+    scope,
     visibleTodos,
     todayTodos,
     todayLabel,
@@ -32,7 +37,6 @@ export default function TodoPage() {
     categoryStats,
   } = useTodoFilters()
 
-  const [scope, setScope] = useState<ListScope>('today')
   const isTodayScope = scope === 'today'
   const todos = isTodayScope ? todayTodos : visibleTodos
   const doneCount = todos.filter((todo) => todo.completed).length
@@ -69,12 +73,7 @@ export default function TodoPage() {
         className="lg:col-span-8"
         actions={
           <div className="flex gap-1 rounded-full bg-app/60 p-1">
-            {(
-              [
-                { value: 'today', label: '今日' },
-                { value: 'all', label: '全部' },
-              ] as { value: ListScope; label: string }[]
-            ).map((option) => (
+            {SCOPE_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 type="button"
