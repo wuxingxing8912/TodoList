@@ -19,10 +19,9 @@ const EMPTY_FORM = {
   dueDate: '',
 }
 
-/** 新增任务表单 */
+/** 新增任务表单：标题 + 描述 + 分类 / 优先级 / 截止日期 */
 export function TodoForm({ onSubmit }: TodoFormProps) {
   const [form, setForm] = useState(EMPTY_FORM)
-  const [showMore, setShowMore] = useState(false)
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -37,7 +36,6 @@ export function TodoForm({ onSubmit }: TodoFormProps) {
       dueDate: toIsoDate(form.dueDate),
     })
     setForm({ ...EMPTY_FORM, category: form.category, priority: form.priority })
-    setShowMore(false)
   }
 
   return (
@@ -55,50 +53,43 @@ export function TodoForm({ onSubmit }: TodoFormProps) {
         </Button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setShowMore(!showMore)}
-        className="text-xs text-ink-muted underline-offset-2 hover:text-brand hover:underline"
-      >
-        {showMore ? '收起选项' : '更多选项（描述 / 分类 / 优先级 / 截止日期）'}
-      </button>
+      <label className="block space-y-1 text-xs text-ink-muted">
+        描述（可选）
+        <Textarea
+          value={form.description}
+          onChange={(event) => setForm({ ...form, description: event.target.value })}
+          placeholder="补充一下细节"
+          rows={2}
+          maxLength={300}
+        />
+      </label>
 
-      {showMore && (
-        <div className="grid gap-3 rounded-2xl bg-app/60 p-3 sm:grid-cols-2">
-          <Textarea
-            value={form.description}
-            onChange={(event) => setForm({ ...form, description: event.target.value })}
-            placeholder="任务描述（可选）"
-            rows={3}
-            className="sm:col-span-2"
-            maxLength={300}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="space-y-1 text-xs text-ink-muted">
+          分类
+          <Select
+            value={form.category}
+            options={CATEGORY_OPTIONS}
+            onChange={(category) => setForm({ ...form, category })}
           />
-          <label className="space-y-1 text-xs text-ink-muted">
-            分类
-            <Select
-              value={form.category}
-              options={CATEGORY_OPTIONS}
-              onChange={(category) => setForm({ ...form, category })}
-            />
-          </label>
-          <label className="space-y-1 text-xs text-ink-muted">
-            优先级
-            <Select
-              value={form.priority}
-              options={PRIORITY_OPTIONS}
-              onChange={(priority) => setForm({ ...form, priority })}
-            />
-          </label>
-          <label className="space-y-1 text-xs text-ink-muted sm:col-span-2">
-            截止日期
-            <Input
-              type="date"
-              value={form.dueDate}
-              onChange={(event) => setForm({ ...form, dueDate: event.target.value })}
-            />
-          </label>
-        </div>
-      )}
+        </label>
+        <label className="space-y-1 text-xs text-ink-muted">
+          优先级
+          <Select
+            value={form.priority}
+            options={PRIORITY_OPTIONS}
+            onChange={(priority) => setForm({ ...form, priority })}
+          />
+        </label>
+        <label className="space-y-1 text-xs text-ink-muted">
+          截止日期
+          <Input
+            type="date"
+            value={form.dueDate}
+            onChange={(event) => setForm({ ...form, dueDate: event.target.value })}
+          />
+        </label>
+      </div>
     </form>
   )
 }

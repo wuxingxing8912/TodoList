@@ -7,6 +7,9 @@ export type Category = 'work' | 'study' | 'life'
 /** 列表筛选状态 */
 export type TodoStatusFilter = 'all' | 'active' | 'completed'
 
+/** 分类筛选值：全部或某个具体分类 */
+export type CategoryFilter = Category | 'all'
+
 /** 待办事项数据模型 */
 export interface Todo {
   /** 唯一标识 */

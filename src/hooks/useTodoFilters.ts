@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
+import { format, isSameDay, parseISO, startOfToday } from 'date-fns'
 import { useTodoStore } from '@/store/todoStore'
 import { PRIORITY_WEIGHT } from '@/constants/todo'
-import type { Todo, TodoStats, TodoStatusFilter } from '@/types/todo'
+import type { CategoryFilter, Todo, TodoStats, TodoStatusFilter } from '@/types/todo'
 
 /**
  * 任务列表的搜索、筛选与统计
@@ -11,6 +12,7 @@ export function useTodoFilters() {
   const todos = useTodoStore((state) => state.todos)
   const [keyword, setKeyword] = useState('')
   const [status, setStatus] = useState<TodoStatusFilter>('all')
+  const [category, setCategory] = useState<CategoryFilter>('all')
 
   const visibleTodos = useMemo(() => {
     const query = keyword.trim().toLowerCase()
@@ -19,6 +21,7 @@ export function useTodoFilters() {
       .filter((todo) => {
         if (status === 'active' && todo.completed) return false
         if (status === 'completed' && !todo.completed) return false
+        if (category !== 'all' && todo.category !== category) return false
         if (!query) return true
         return (
           todo.title.toLowerCase().includes(query) ||
@@ -30,7 +33,7 @@ export function useTodoFilters() {
         if (a.priority !== b.priority) return PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority]
         return b.createdAt.localeCompare(a.createdAt)
       })
-  }, [todos, keyword, status])
+  }, [todos, keyword, status, category])
 
   const stats = useMemo<TodoStats>(
     () => ({
@@ -55,5 +58,29 @@ export function useTodoFilters() {
     return result
   }, [todos])
 
-  return { keyword, setKeyword, status, setStatus, visibleTodos, stats, categoryStats }
+  /**
+   * 今日任务：截止日期为今天的任务；
+   * 没有截止日期时则以创建日期为今天为准
+   */
+  const todayTodos = useMemo(() => {
+    const today = startOfToday()
+    return visibleTodos.filter((todo) => {
+      const target = todo.dueDate ? parseISO(todo.dueDate) : parseISO(todo.createdAt)
+      return isSameDay(target, today)
+    })
+  }, [visibleTodos])
+
+  return {
+    keyword,
+    setKeyword,
+    status,
+    setStatus,
+    category,
+    setCategory,
+    visibleTodos,
+    todayTodos,
+    todayLabel: format(new Date(), 'M月d日'),
+    stats,
+    categoryStats,
+  }
 }
